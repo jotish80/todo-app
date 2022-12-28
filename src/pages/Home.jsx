@@ -63,7 +63,7 @@ const Home = () => {
                     {todos.map(todo => (
                         <Todo todo={todo} completeTask={completeTask} />
                     ))}
-                </div>{' '}
+                </div>
                 <br />
                 <div className="w-full flex justify-center">
                     <TextInput
