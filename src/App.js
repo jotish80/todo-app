@@ -1,25 +1,30 @@
-
+import axios from 'axios';
 import { Route, Routes } from 'react-router-dom';
-import './App.css';
-import Login from './components/Login';
-import SignUp from './components/SignUp';
-
-
+import CompletedTasks from './components/CompletedTasks';
+import Nav from './components/Nav';
+import PrivateRoute from './components/PrivateRoute';
 import Home from './pages/Home';
+import Login from './pages/Login';
 
+axios.defaults.baseURL = 'https://server-azure-two.vercel.app';
 
 function App() {
   return (
     <div className="max-w-5xl mx-auto">
-      <Home />
-
+      <Nav />
       <Routes>
-        {/* <Route path='/' element={Home} /> */}
-        <Route path='/login' element={Login} />
-        <Route path='/signup' element={SignUp} />
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
+          }
+        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/completedTasks" element={<CompletedTasks />} />
+        <Route path="*" element={<div className="h-[100vh] mx-auto mt-40">Not found</div>} />
       </Routes>
-
-
     </div>
   );
 }

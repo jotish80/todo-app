@@ -1,83 +1,123 @@
+import axios from 'axios';
 import { Checkbox, Label, TextInput } from 'flowbite-react';
 import React, { useState } from 'react';
-import Nav from '../components/Nav';
+import { useContext } from 'react';
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Todo from '../components/Todo';
+import AuthProvider, { AuthContext } from '../context/AuthProvider';
 
 const Home = () => {
-    const [todos, setTodos] = useState([]);
-    const [completedTodos, setCompletedTodos] = useState([])
-    let id = 0;
-    console.log(todos);
+  const [user, setUser] = useContext(AuthContext);
+  const [todos, setTodos] = useState([]);
+  const [changeTracker, setChangeTracker] = useState([]);
 
-    const completeTask = id => {
-        console.log(id);
-        const tasks = todos.map(todo => {
-            if (todo.id === id) {
-                if (todo.isCompleted === true) {
-                    todo.isCompleted = false;
-                } else {
-                    todo.isCompleted = true;
-                }
-            }
-            return todo;
-        });
-        setTodos(tasks);
-    };
+  useEffect(() => {
+    axios
+      .get(`/${user?.email}`)
+      .then(res => setTodos(res.data))
+      .catch(error => console.log(error));
+  }, [changeTracker]);
 
-    const addTodo = e => {
-        if (e.keyCode == 13) {
-            const todo = {
-                id: id,
-                task: e.target.value,
-                isCompleted: false,
-            };
-            setTodos([...todos, todo]);
-            e.target.value = '';
-        }
-        id++;
-    };
+  const addTodo = async e => {
+    if (e.keyCode == 13) {
+      try {
+        const { data } = await axios.post(`/${user?.email}`, { task: e.target.value });
+        setChangeTracker(data);
+        e.target.value = '';
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  };
 
-    const completedTasks = () => {
-        const tasks = todos.filter(todo => todo.isCompleted === true);
-        setTodos(tasks);
-    };
+  // const updateTodo = async e => {
+  //   if (e.keyCode == 13) {
+  //     try {
+  //       const { data } = await axios.patch(`/$fjlsad`, { task: e.target.value });
+  //       setChangeTracker(data);
+  //       e.target.value = '';
+  //     } catch (err) {
+  //       console.log(err);
+  //     }
+  //   }
+  // };
 
-    return (
-        <main>
-            <Nav />
-            <section className="border-2 border-gray-200 shadow-md rounded-lg h-[80vh] grid w-2/3 mx-auto items-end p-5">
-                <div className="mx-24 border-1 border-gray-500  shadow-sm rounded-md py-2 flex items-center justify-around">
-                    <button className="px-3 py-1 border-gray-400 border-1 rounded-md shadow-sm bg-blue-500 text-white border-blue-700">
-                        My Tasks
-                    </button>
-                    <button className="px-3 py-1 hover:bg-blue-500 hover:border-blue-600 hover:text-white border-gray-200 border-2 rounded-md shadow-sm ">
-                        Add Task
-                    </button>
-                    <button
-                        onClick={completedTasks}
-                        className="px-3 py-1 border-gray-200 border-2 rounded-md shadow-sm ">
-                        Completed Tasks
-                    </button>
-                </div>
-                <div className="mx-24">
-                    {todos.map(todo => (
-                        <Todo todo={todo} completeTask={completeTask} />
-                    ))}
-                </div>
-                <br />
-                <div className="w-full flex justify-center">
-                    <TextInput
-                        onKeyDown={addTodo}
-                        id="base"
-                        type="text"
-                        sizing="lg"
-                        className="w-4/5"
-                        placeholder="Add Task Here"
-                    />
-                </div>
-            </section>
-        </main>
-    );
+  const getCompletedTasks = async () => {
+    setActiveButton({ myTask: false, completedTask: true });
+
+    try {
+      const { data } = await axios.get(`/completedTasks/${user?.email}`);
+      setTodos(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const [activeButton, setActiveButton] = useState({
+    myTask: true,
+    completedTask: false,
+  });
+
+  const getMyTasks = async () => {
+    setActiveButton({ myTask: true, completedTask: false });
+    try {
+      const { data } = await axios.get(`/${user?.email}`);
+      setTodos(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const completeTask = async id => {
+    console.log(id);
+    try {
+      const { data } = await axios.patch(`/${id}`);
+      setChangeTracker(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  return (
+    <main>
+      <div className="border-2  border-gray-200 shadow-md rounded-lg grid items-end h-[80vh] w-2/3 mx-auto p-5">
+        <section className="">
+          <div className="mx-24 border-1 border-gray-500  shadow-sm rounded-md py-2 flex justify-around">
+            <Link to="/">
+              <button
+                className="bg-blue-500 border-blue-400
+               text-white px-3 py-1 active:ring-2 ring-blue-300 border-2 rounded-md shadow-sm">
+                My Tasks
+              </button>
+            </Link>
+
+            <Link to="/completedTasks">
+              <button className="text-black hover:bg-blue-600 hover:text-white px-3 py-1 active:ring-2 ring-blue-300 border-gray-200 border-2 rounded-md shadow-sm ">
+                Completed Tasks
+              </button>
+            </Link>
+          </div>
+
+          <div className="px-3 mx-24 h-[300px] overflow-y-scroll">
+            {todos.map(todo => (
+              <Todo todo={todo} completeTask={completeTask} />
+            ))}
+          </div>
+        </section>
+
+        <br />
+        <div className="w-full flex items-end justify-center">
+          <input
+            type="text"
+            className="w-2/3 px-3 py-3 rounded-lg border-2 border-gray-200 shadow-md outline-offset-0 bg-white active:ring-2 focus:outline-none ring-blue-200"
+            onKeyDown={addTodo}
+            placeholder="Add task from here..."
+          />
+        </div>
+      </div>
+    </main>
+  );
 };
 
 export default Home;
